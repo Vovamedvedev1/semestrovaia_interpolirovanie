@@ -1,6 +1,9 @@
 import functools
 import numpy as np
 import tkinter as tk
+from tkinter import ttk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 from GUI import GUI
 import matplotlib.pyplot as plt
 import math
@@ -41,13 +44,18 @@ class InterpolationApp(GUI):
         return result
     
     def get_parameters_parabol_spline(self):
-        a, b, c = np.zeros(self.n - 1), np.zeros(self.n), np.zeros(self.n - 1)
-        b[0] = 0
+        a, b, c = np.zeros(self.n - 1), np.zeros(self.n - 1), np.zeros(self.n - 1)
+        x0, x1, x2 = self.x[0], self.x[1], self.x[2]
+        y0, y1, y2 = self.y[0], self.y[1], self.y[2]
+        A = ((y2 - y0)*(x1 - x0) - (y1 - y0)*(x2 - x0)) / ((x2**2 - x0**2)*(x1 - x0) - (x1**2 - x0**2)*(x2 - x0))
+        B = (y1 - y0 - A*(x1**2 - x0**2)) / (x1 - x0)
+        b[0] = 2*A*x0 + B
         for i in range(0, self.n - 1):
             h = self.x[i + 1] - self.x[i]
-            a[i] = self.y[i + 1]
-            b[i + 1] = -b[i] + 2 * (self.y[i + 1] - self.y[i]) / h
-            c[i] = (b[i + 1] - b[i]) / (2 * h)
+            a[i] = self.y[i]
+            if i < self.n - 2:
+                b[i + 1] = -b[i] + 2 * (self.y[i + 1] - self.y[i]) / h   
+            c[i] = (self.y[i + 1] - a[i] - b[i] * h) / (h ** 2)
         return a, b, c
     
     def get_parabol_spline(self, t):
@@ -56,10 +64,9 @@ class InterpolationApp(GUI):
             k = 0
             while k < len(self.x) - 1 and t[i] > self.x[k + 1]:
                 k += 1
-            k += 1
             xk = self.x[k]
-            result[i] = self.a_parabol[k - 1] + self.b_parabol[k] * (t[i] - xk)  + self.c_parabol[k - 1] * (t[i] - xk) ** 2
-        return result
+            result[i] = self.a_parabol[k] + self.b_parabol[k] * (t[i] - xk)  + self.c_parabol[k] * (t[i] - xk) ** 2
+        return result 
     
     def get_parameters_cubic_spline(self):
         A, B, D, F = np.zeros(self.n - 2), np.zeros(self.n - 2), np.zeros(self.n - 2), np.zeros(self.n - 2)
@@ -163,67 +170,64 @@ class InterpolationApp(GUI):
 
     def get_scipy_spline_interpolation(self):
         try:
-            # Создаем новое окно с графиками SciPy
-            fig_scipy, axes_scipy = plt.subplots(2, 2, figsize=(15, 10))
-            fig_scipy.canvas.manager.set_window_title('SciPy Spline Interpolation')
-            
-            # Вычисляем сплайны с помощью SciPy
+            scipy_window = tk.Toplevel(self.root)
+            scipy_window.title("SciPy Spline Interpolation")
+            scipy_window.geometry("1200x800")
+            frame = ttk.Frame(scipy_window)
+            frame.pack(fill=tk.BOTH, expand=True)
+            fig_scipy = Figure(figsize=(12, 8))
+            axes_scipy = fig_scipy.subplots(2, 2)
             ls = interp1d(self.x, self.y, kind='linear')
             linear_spline_scipy = ls(self.x_plot)
             cs = CubicSpline(self.x, self.y, bc_type='natural')
             cubic_spline_scipy = cs(self.x_plot)
             ps = interp1d(self.x, self.y, kind='quadratic')
             parabol_spline_scipy = ps(self.x_plot)
-            
             ls_error = np.abs(self.y_plot - linear_spline_scipy)
             ps_error = np.abs(self.y_plot - parabol_spline_scipy)
             cs_error = np.abs(self.y_plot - cubic_spline_scipy)
-            
-            # Строим графики в новом окне
-            axes_scipy[0][0].plot(self.x_plot, self.y_plot, label='Исходная функция', linewidth=2)
-            axes_scipy[0][0].plot(self.x_plot, linear_spline_scipy, 'g--', label='Линейный сплайн (SciPy)', linewidth=1.5)
-            axes_scipy[0][0].scatter(self.x, self.y, c='r', s=50, label='Узлы интерполяции', zorder=5)
-            axes_scipy[0][0].set_xlabel('x')
-            axes_scipy[0][0].set_ylabel('y')
-            axes_scipy[0][0].set_title(f'Интерполяция линейным сплайном (n={self.n}) - SciPy')
-            axes_scipy[0][0].legend()
-            axes_scipy[0][0].grid(True, alpha=0.3)
-
-            axes_scipy[0][1].plot(self.x_plot, self.y_plot, label='Исходная функция', linewidth=2)
-            axes_scipy[0][1].plot(self.x_plot, cubic_spline_scipy, 'g--', label='Кубический сплайн (SciPy)', linewidth=1.5)
-            axes_scipy[0][1].scatter(self.x, self.y, c='r', s=50, label='Узлы интерполяции', zorder=5)
-            axes_scipy[0][1].set_xlabel('x')
-            axes_scipy[0][1].set_ylabel('y')
-            axes_scipy[0][1].set_title(f'Интерполяция кубическим сплайном (n={self.n}) - SciPy')
-            axes_scipy[0][1].legend()
-            axes_scipy[0][1].grid(True, alpha=0.3)
-
-            axes_scipy[1][0].plot(self.x_plot, self.y_plot, label='Исходная функция', linewidth=2)
-            axes_scipy[1][0].plot(self.x_plot, parabol_spline_scipy, 'g--', label='Параболический сплайн (SciPy)', linewidth=1.5)
-            axes_scipy[1][0].scatter(self.x, self.y, c='r', s=50, label='Узлы интерполяции', zorder=5)
-            axes_scipy[1][0].set_xlabel('x')
-            axes_scipy[1][0].set_ylabel('y')
-            axes_scipy[1][0].set_title(f'Интерполяция параболическим сплайном (n={self.n}) - SciPy')
-            axes_scipy[1][0].legend()
-            axes_scipy[1][0].grid(True, alpha=0.3)
-
-            axes_scipy[1][1].plot(self.x_plot, ls_error, label='Погрешность линейного сплайна', linewidth=2)
-            axes_scipy[1][1].plot(self.x_plot, ps_error, label='Погрешность параболического сплайна', linewidth=2)
-            axes_scipy[1][1].plot(self.x_plot, cs_error, label='Погрешность кубического сплайна', linewidth=2)
-            axes_scipy[1][1].set_xlabel('x')
-            axes_scipy[1][1].set_ylabel('Фактическая погрешность')
-            axes_scipy[1][1].set_title(f'Максимальная погрешность (SciPy):\nЛинейный: {ls_error.max():.2e}; Параболический: {ps_error.max():.2e}; Кубический: {cs_error.max():.2e};')
-            axes_scipy[1][1].legend()
-            axes_scipy[1][1].grid(True, alpha=0.3)
-
+            axes_scipy[0, 0].plot(self.x_plot, self.y_plot, label='Исходная функция', linewidth=2)
+            axes_scipy[0, 0].plot(self.x_plot, linear_spline_scipy, 'g--', label='Линейный сплайн (SciPy)', linewidth=1.5)
+            axes_scipy[0, 0].scatter(self.x, self.y, c='r', s=50, label='Узлы интерполяции', zorder=5)
+            axes_scipy[0, 0].set_xlabel('x')
+            axes_scipy[0, 0].set_ylabel('y')
+            axes_scipy[0, 0].set_title(f'Интерполяция линейным сплайном (n={self.n}) - SciPy')
+            axes_scipy[0, 0].legend()
+            axes_scipy[0, 0].grid(True, alpha=0.3)
+            axes_scipy[0, 1].plot(self.x_plot, self.y_plot, label='Исходная функция', linewidth=2)
+            axes_scipy[0, 1].plot(self.x_plot, cubic_spline_scipy, 'g--', label='Кубический сплайн (SciPy)', linewidth=1.5)
+            axes_scipy[0, 1].scatter(self.x, self.y, c='r', s=50, label='Узлы интерполяции', zorder=5)
+            axes_scipy[0, 1].set_xlabel('x')
+            axes_scipy[0, 1].set_ylabel('y')
+            axes_scipy[0, 1].set_title(f'Интерполяция кубическим сплайном (n={self.n}) - SciPy')
+            axes_scipy[0, 1].legend()
+            axes_scipy[0, 1].grid(True, alpha=0.3)
+            axes_scipy[1, 0].plot(self.x_plot, self.y_plot, label='Исходная функция', linewidth=2)
+            axes_scipy[1, 0].plot(self.x_plot, parabol_spline_scipy, 'g--', label='Параболический сплайн (SciPy)', linewidth=1.5)
+            axes_scipy[1, 0].scatter(self.x, self.y, c='r', s=50, label='Узлы интерполяции', zorder=5)
+            axes_scipy[1, 0].set_xlabel('x')
+            axes_scipy[1, 0].set_ylabel('y')
+            axes_scipy[1, 0].set_title(f'Интерполяция параболическим сплайном (n={self.n}) - SciPy')
+            axes_scipy[1, 0].legend()
+            axes_scipy[1, 0].grid(True, alpha=0.3)
+            axes_scipy[1, 1].plot(self.x_plot, ls_error, label='Погрешность линейного сплайна', linewidth=2)
+            axes_scipy[1, 1].plot(self.x_plot, ps_error, label='Погрешность параболического сплайна', linewidth=2)
+            axes_scipy[1, 1].plot(self.x_plot, cs_error, label='Погрешность кубического сплайна', linewidth=2)
+            axes_scipy[1, 1].set_xlabel('x')
+            axes_scipy[1, 1].set_ylabel('Фактическая погрешность')
+            axes_scipy[1, 1].set_title(f'Максимальная погрешность (SciPy):\nЛинейный: {ls_error.max():.2e}; Параболический: {ps_error.max():.2e}; Кубический: {cs_error.max():.2e};')
+            axes_scipy[1, 1].legend()
+            axes_scipy[1, 1].grid(True, alpha=0.3)
             fig_scipy.tight_layout()
-            plt.show()  # Показываем новое окно
-            
+            canvas = FigureCanvasTkAgg(fig_scipy, master=frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+            close_button = ttk.Button(scipy_window, text="Закрыть", 
+                                    command=scipy_window.destroy)
+            close_button.pack(pady=10)
             self.error_label.config(text="")
-            
         except Exception as e:
             self.error_label.config(text=f"Ошибка в SciPy интерполяции: {str(e)}")
-
 
 if __name__ == "__main__":
     root = tk.Tk()
