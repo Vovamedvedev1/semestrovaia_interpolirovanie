@@ -215,7 +215,7 @@ class InterpolationApp(GUI):
             axes_scipy[1, 1].plot(self.x_plot, cs_error, label='Погрешность кубического сплайна', linewidth=2)
             axes_scipy[1, 1].set_xlabel('x')
             axes_scipy[1, 1].set_ylabel('Фактическая погрешность')
-            axes_scipy[1, 1].set_title(f'Максимальная погрешность (SciPy):\nЛинейный: {ls_error.max():.2e}; Параболический: {ps_error.max():.2e}; Кубический: {cs_error.max():.2e};')
+            axes_scipy[1, 1].set_title(f'Максимальная погрешность (SciPy):\nЛинейный: {ls_error.max()}; Параболический: {ps_error.max()}; Кубический: {cs_error.max()};')
             axes_scipy[1, 1].legend()
             axes_scipy[1, 1].grid(True, alpha=0.3)
             fig_scipy.tight_layout()
