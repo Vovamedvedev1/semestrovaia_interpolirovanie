@@ -104,8 +104,8 @@ class InterpolationApp(GUI):
             self.a = float(self.entry_a.get())
             self.b = float(self.entry_b.get())
             self.n = int(self.entry_n.get())
-            if self.n <= 0:
-                raise ValueError("Количество узлов должно быть положительным")
+            if self.n <= 3:
+                raise ValueError("Количество узлов должно быть положительным и большим 3")
             if self.a >= self.b:
                 raise ValueError("Левая граница должна быть меньше правой")
             self.x_plot = np.linspace(self.a, self.b, 100000)
