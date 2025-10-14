@@ -28,11 +28,6 @@ class InterpolationApp(GUI):
         self.fig, self.axes = plt.subplots(2, 2, figsize=(15, 10))
         super().__init__(root, self.fig)
  
-    def get_chebushev_nodes(self):
-        k = np.arange(1, self.n + 1)
-        cheb_nodes = np.cos((2 * k - 1) * np.pi / (2 * self.n))
-        return 0.5 * (self.a + self.b) + 0.5 * (self.b - self.a) * cheb_nodes
- 
     def get_linear_spline(self, t):
         result = np.zeros_like(t)
         for i in range(len(t)):
