@@ -12,6 +12,7 @@ import sympy as sp
 from sympy.utilities.lambdify import lambdify
 from sympy.parsing.sympy_parser import parse_expr, function_exponentiation
 from scipy.interpolate import interp1d, CubicSpline
+from scipy.integrate import simpson
 
  
 def function(x, math_value):
@@ -158,7 +159,8 @@ class InterpolationApp(GUI):
             self.axes[1][1].plot(self.x_plot, actual_error_cubic, label='Погрешность кубического сплайна', linewidth=2) 
             self.axes[1][1].set_xlabel('x')
             self.axes[1][1].set_ylabel('Фактическая погрешность')
-            self.axes[1][1].set_title(f'Максимальное значение фактической погрешности:\nЛинейный: {actual_error_linear.max()}; Параболический: {actual_error_parabol.max()}; Кубический: {actual_error_cubic.max()};')
+            self.axes[1][1].set_title(f'''Макс. факт. погр.: Линейный: {actual_error_linear.max()}; Параболический: {actual_error_parabol.max()}; Кубический: {actual_error_cubic.max()};\n
+                                      Сумм. откл-е: Линейный: {simpson(actual_error_linear, self.x_plot)}; Параболический: {simpson(actual_error_parabol, self.x_plot)}; Кубический: {simpson(actual_error_cubic, self.x_plot)}''')
             self.axes[1][1].legend()
             self.axes[1][1].grid(True, alpha=0.3)
  
@@ -215,7 +217,8 @@ class InterpolationApp(GUI):
             axes_scipy[1, 1].plot(self.x_plot, cs_error, label='Погрешность кубического сплайна', linewidth=2)
             axes_scipy[1, 1].set_xlabel('x')
             axes_scipy[1, 1].set_ylabel('Фактическая погрешность')
-            axes_scipy[1, 1].set_title(f'Максимальная погрешность (SciPy):\nЛинейный: {ls_error.max()}; Параболический: {ps_error.max()}; Кубический: {cs_error.max()};')
+            axes_scipy[1, 1].set_title(f'''Макс. погр.:\nЛинейный: {ls_error.max()}; Параболический: {ps_error.max()}; Кубический: {cs_error.max()};\n
+                                       Суммарн. откл-е: Линейный: {simpson(ls_error, self.x_plot)}; Параболический: {simpson(ps_error, self.x_plot)}; Кубический: {simpson(cs_error, self.x_plot)}''')
             axes_scipy[1, 1].legend()
             axes_scipy[1, 1].grid(True, alpha=0.3)
             fig_scipy.tight_layout()
