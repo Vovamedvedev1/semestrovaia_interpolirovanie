@@ -5,7 +5,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 class GUI:
     def __init__(self, root, fig):
         self.root = root
-        self.root.title("Интерполяция полиномом Лагранжа и сплайнами SciPy")
+        self.root.title("Интерполяция сплайнами")
         self.root.geometry("1200x1000")
 
         
